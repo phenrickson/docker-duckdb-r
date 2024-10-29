@@ -1,15 +1,13 @@
 # Stage 1: Build base image and install dependencies
-FROM rocker/r-ver:4.4.1 AS base
+FROM rocker/r-ver:4.4.1 as base
 
 # Set environment variables
 ENV WORKDIR=/project
-ENV RENV_VERSION=1.0.7
-ENV RENV_PATHS_LIBRARY=${WORKDIR}/renv/library
-ENV RENV_PATHS_CACHE=${WORKDIR}/renv/.cache
+ENV RENV_VERSION=1.0.11
 
 # Install system dependencies
 RUN apt-get update && apt-get install -y \
-    cmake \    
+    cmake \
     libcurl4-openssl-dev \
     libmbedtls-dev \
     libssl-dev \
@@ -20,11 +18,13 @@ RUN apt-get update && apt-get install -y \
 
 # Set the working directory
 WORKDIR ${WORKDIR}
+ENV RENV_PATHS_LIBRARY=${WORKDIR}/renv/library
+ENV RENV_PATHS_CACHE=${WORKDIR}/renv/.cache
 
 FROM base as builder
 
 # Install specific version of renv
-RUN R -e "install.packages('renv', repos='https://cloud.r-project.org', type='source', version='${RENV_VERSION}')"
+RUN R -e "install.packages('renv', repos='https://cloud.r-project.org', version='${RENV_VERSION}')"
 
 # Copy renv files
 # https://rstudio.github.io/renv/articles/docker.html
@@ -51,7 +51,7 @@ WORKDIR ${WORKDIR}
 COPY --from=builder ${WORKDIR} .
 
 # Copy project files
-COPY _targets.R _targets.R 
+COPY _targets.R _targets.R
 COPY R R
 COPY run.R run.R
 
@@ -60,9 +60,11 @@ RUN mkdir -p data
 # Mount the _targets directory as a volume
 VOLUME ${WORKDIR}/_targets
 
+ENTRYPOINT ["R"]
+
 # Restore R packages from the builder stage's cache
 # TODO renv would install again within the runner stage?
 # RUN R -e "renv::restore()"
 
 # Command to run the targets pipeline
-CMD ["Rscript", "--verbose", "run.R"]
+# CMD ["Rscript", "--verbose", "run.R"]
