@@ -3,7 +3,7 @@ library(qs)
 
 
 targets::tar_option_set(
-  packages = c("tibble"),
+  packages = c("tibble", "dbplyr"),
   format = "qs"
 )
 
